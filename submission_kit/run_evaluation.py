@@ -67,7 +67,7 @@ def run_match(model_paths, num_episodes=10, max_steps=500, seed=None):
         while not done and step < max_steps:
             # actions = [agent.act(obs) for agent in agents]
             actions = []
-            for i in range(len(agents)):
+            for i in range(n_players):
                 if isinstance(agents[i], DQNAgent):
                     actions.append(agents[i].act(encoded_obs, epsilon=0.05))
                 else:
@@ -99,7 +99,7 @@ def run_match(model_paths, num_episodes=10, max_steps=500, seed=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_paths", nargs="+", default=["None", "None"])
+    parser.add_argument("--model_paths", nargs="+", default=["None", "None", "None", "None"])
     parser.add_argument("--num_episodes", type=int, default=10)
     parser.add_argument("--max_steps", type=int, default=500)
     parser.add_argument("--seed", type=int, default=None)
