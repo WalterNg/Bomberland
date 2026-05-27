@@ -13,3 +13,10 @@ submissions/
 backups/
 tests/
 training/
+
+# AI assistants
+.codex/
+
+# Submission
+.submission/
+results/

@@ -16,10 +16,8 @@ if str(parent_dir) not in sys.path:
 
 from engine import BomberEnv
 from agent import RandomAgent, SimpleRuleAgent, SmarterRuleAgent, TacticalRuleAgent, GeniusRuleAgent, BoxFarmerAgent
-from training import encode_obs, DQNAgent, DQfDAgent
-from training.SQIL import encode_obs as sqil_encode_obs
-from training.bc_ppo_lstm import BC_PPO_LSTM_Agent, is_bc_ppo_lstm_checkpoint
-from training.bc_ppo_lstm_attn_selfplay import ActorCriticAttnLSTM
+# Unused training/RL imports removed to avoid linting errors.
+
 from competition.evaluation.runtime_guard import load_agent_instance
 
 class Viewer:
@@ -225,81 +223,7 @@ def str2bool(value):
 	raise argparse.ArgumentTypeError(f"Invalid boolean value: {value}")
 
 
-def is_bc_ppo_attn_selfplay_checkpoint(ckpt: dict) -> bool:
-	"""True for checkpoints produced by training/bc_ppo_lstm_attn_selfplay.py."""
-	if ckpt.get("agent_type") == "bc_ppo_lstm_attn_selfplay":
-		return True
-	meta = ckpt.get("meta")
-	if isinstance(meta, dict) and meta.get("model_variant") in {"lstm", "attn", "attn_lstm"} and (
-		meta.get("input_spec") is not None or ckpt.get("input_shape") is not None
-	):
-		return True
-	return False
-
-
-class BC_PPO_AttnSelfplay_Agent:
-	"""Greedy / ε-greedy wrapper (supports lstm/attn/attn_lstm variants)."""
-
-	def __init__(
-		self,
-		agent_id: int,
-		checkpoint_path: str,
-		device: str | None = None,
-		force_variant: str | None = None,
-	):
-		self.agent_id = int(agent_id)
-		self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-		ckpt = torch.load(checkpoint_path, map_location=self.device)
-		meta = ckpt.get("meta", {})
-		input_spec = meta.get("input_spec") or ckpt.get("input_shape")
-		if input_spec is None:
-			raise ValueError(f"Checkpoint {checkpoint_path!r} missing meta['input_spec'] or input_shape")
-		map_shape = tuple(input_spec[0])
-		aux_dim = int(input_spec[1])
-		num_actions = int(meta.get("num_actions", ckpt.get("num_actions", 6)))
-		variant = force_variant or meta.get("model_variant", "lstm")
-		if variant not in {"lstm", "attn", "attn_lstm"}:
-			raise ValueError(f"Invalid model variant {variant!r} for {checkpoint_path!r}")
-
-		self.map_shape = map_shape
-		self.aux_dim = aux_dim
-		self.num_actions = num_actions
-		self.variant = variant
-
-		self.model = ActorCriticAttnLSTM(
-			map_shape=map_shape,
-			aux_dim=aux_dim,
-			num_actions=num_actions,
-			variant=variant,
-			map_feat_dim=int(meta.get("map_feat_dim", 128)),
-			aux_embed_dim=int(meta.get("aux_embed_dim", 32)),
-			lstm_hidden=int(meta.get("lstm_hidden", 128)),
-			lstm_layers=int(meta.get("lstm_layers", 1)),
-			attn_d_model=int(meta.get("attn_d_model", 128)),
-			attn_heads=int(meta.get("attn_heads", 4)),
-			pos_max_h=int(meta.get("pos_max_h", 32)),
-			pos_max_w=int(meta.get("pos_max_w", 32)),
-		).to(self.device)
-		self.model.load_state_dict(ckpt["model_state_dict"])
-		self.model.eval()
-		self._hidden = None
-
-	def reset_memory(self) -> None:
-		self._hidden = None
-
-	def act(self, map_state, aux_state, epsilon: float = 0.0) -> int:
-		m = torch.from_numpy(map_state).float().unsqueeze(0).to(self.device)
-		aux = torch.from_numpy(aux_state).float().unsqueeze(0).to(self.device)
-		with torch.no_grad():
-			if self.model.use_lstm:
-				if self._hidden is None:
-					self._hidden = self.model.init_hidden(1, self.device)
-				logits, _, self._hidden = self.model.forward_step(m, aux, self._hidden)
-			else:
-				logits, _, _ = self.model.forward_step(m, aux, None)
-		if random.random() < float(epsilon):
-			return random.randint(0, self.num_actions - 1)
-		return int(logits.argmax(dim=-1).item())
+# Unused BC_PPO_AttnSelfplay_Agent and related functions removed.
 
 
 def make_agents(agent_paths, seed=None):
@@ -425,26 +349,7 @@ def unorient_action_from_topleft(action, agent_id):
 	return action
 
 
-def _expected_input_spec(agent):
-	"""Return (map_channels, aux_dim) if available, else (None, None)."""
-	map_shape = getattr(agent, "map_shape", None)
-	aux_dim = getattr(agent, "aux_dim", None)
-	if map_shape is None or aux_dim is None:
-		return None, None
-	return int(map_shape[0]), int(aux_dim)
-
-
-def _encode_for_model_agent(obs, agent_id, all_agent_ids, agent):
-	"""Encode obs using a feature format compatible with the loaded model."""
-	map_channels, aux_dim = _expected_input_spec(agent)
-
-	# SQIL checkpoints in this repo use 11 map channels + 5 aux scalars.
-	if map_channels == 11 and aux_dim == 5:
-		return sqil_encode_obs(obs, agent_ids=[agent_id, *all_agent_ids])
-
-	# Fallback to legacy DQN encoding (9 channels + 3 aux).
-	opp_id = all_agent_ids[0] if all_agent_ids else (1 - agent_id)
-	return encode_obs(obs, agent_ids=[agent_id, opp_id])
+# Unused _encode_for_model_agent and related functions removed.
 
 
 def simulate_episodes(agent_paths, num_episodes=10, max_steps=500, seed=None, model_variants=None):
