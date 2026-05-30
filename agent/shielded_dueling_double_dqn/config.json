@@ -1,0 +1,40 @@
+{
+  "agent": {
+    "team_id": "shielded_dueling_double_dqn"
+  },
+  "paths": {
+    "runs_dir": "runs",
+    "weights_dir": "weights",
+    "model_filename": "shielded_dueling_double_dqn.pth",
+    "bootstrap_checkpoint": "weights/v1_280526_154105/v1.pth"
+  },
+  "inference": {
+    "checkpoint_path": "runs/280526-164057/last.pth",
+    "device": "cpu"
+  },
+  "training": {
+    "enemy_type": "league",
+    "num_episodes": 200,
+    "max_steps": 500,
+    "seed": 86,
+    "save_model": true,
+    "pretrained_model": null,
+    "opponent_paths": [],
+    "batch_size": 128,
+    "learning_starts": 10000,
+    "train_freq": 4,
+    "target_update_interval": 4000,
+    "replay_capacity": 200000,
+    "n_step": 3,
+    "gamma": 0.99,
+    "learning_rate": 0.0001,
+    "epsilon_start": 1.0,
+    "epsilon_final": 0.05,
+    "epsilon_decay_steps": 300000,
+    "beta_start": 0.4,
+    "beta_final": 1.0,
+    "beta_growth_steps": 300000,
+    "max_grad_norm": 10.0,
+    "checkpoint_interval_episodes": 100
+  }
+}
