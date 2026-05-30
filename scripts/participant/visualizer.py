@@ -223,9 +223,6 @@ def str2bool(value):
 	raise argparse.ArgumentTypeError(f"Invalid boolean value: {value}")
 
 
-# Unused BC_PPO_AttnSelfplay_Agent and related functions removed.
-
-
 def make_agents(agent_paths, seed=None):
 	n_players = len(agent_paths)
 	agents = [None] * n_players
@@ -349,7 +346,28 @@ def unorient_action_from_topleft(action, agent_id):
 	return action
 
 
-# Unused _encode_for_model_agent and related functions removed.
+def _expected_input_spec(agent):
+	"""Return (map_channels, aux_dim) if available, else (None, None)."""
+	map_shape = getattr(agent, "map_shape", None)
+	aux_dim = getattr(agent, "aux_dim", None)
+	if map_shape is None or aux_dim is None:
+		return None, None
+	return int(map_shape[0]), int(aux_dim)
+
+
+def _encode_for_model_agent(obs, agent_id, all_agent_ids, agent):
+	"""Encode obs using a feature format compatible with the loaded model."""
+	map_channels, aux_dim = _expected_input_spec(agent)
+
+	# SQIL checkpoints in this repo use 11 map channels + 5 aux scalars.
+	if map_channels == 11 and aux_dim == 5 and sqil_encode_obs is not None:
+		return sqil_encode_obs(obs, agent_ids=[agent_id, *all_agent_ids])
+
+	# Fallback to legacy DQN encoding (9 channels + 3 aux).
+	if legacy_encode_obs is None:
+		raise RuntimeError("Legacy DQN encoder is unavailable in this environment.")
+	opp_id = all_agent_ids[0] if all_agent_ids else (1 - agent_id)
+	return legacy_encode_obs(obs, agent_ids=[agent_id, opp_id])
 
 
 def simulate_episodes(agent_paths, num_episodes=10, max_steps=500, seed=None, model_variants=None):
